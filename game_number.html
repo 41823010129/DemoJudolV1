@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky66 - Premium Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="app-layout">
+
+        <!-- Mobile Header (Visible only on mobile via CSS) -->
+        <div class="mobile-header" style="display:none;">
+            <div style="font-weight:800; color:white;">LUCKY66</div>
+            <div style="font-size:0.9rem; color:var(--primary); font-weight:bold;">IDR <span id="mobileBalance">0</span>
+            </div>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 2rem; display:flex; align-items:center; gap:10px;">
+                <span
+                    style="background:var(--primary); width:12px; height:12px; border-radius:50%; display:inline-block;"></span>
+                DemoJudol
+            </h2>
+
+            <nav style="flex-grow:1;">
+                <a href="user.html" class="nav-link">Lobby Utama</a>
+                <a href="#" class="nav-link active">Lucky 66 Number</a>
+                <a href="game_slot_classic.html" class="nav-link">Classic Slots</a>
+                <a href="game_slot_bonanza.html" class="nav-link">Bonanza 6x6</a>
+                <a href="deposit.html" class="nav-link">Isi Saldo (Deposit)</a>
+            </nav>
+
+            <div class="balance-card"
+                style="margin-bottom:0; padding:1rem; border:1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03);">
+                <div style="font-size:0.8rem; color:var(--text-muted);">User Account</div>
+                <div id="usernameDisplay" style="font-weight:700; margin-bottom:5px;">Loading...</div>
+                <button onclick="logout()"
+                    style="width:100%; padding:8px; border:1px solid rgba(255,0,60,0.3); background:transparent; color:#ff003c; border-radius:8px; cursor:pointer; font-size:0.8rem; margin-top:5px;">LOGOUT</button>
+            </div>
+        </aside>
+
+        <!-- Main Game Area -->
+        <main class="main-content">
+            <div class="desktop-only"
+                style="width:100%; max-width:700px; display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3>LUCKY <span style="color:var(--primary);">66</span></h3>
+                <div style="font-size:0.9rem; color:var(--text-muted);">Pilih angka kemenangan Anda</div>
+            </div>
+
+            <div class="grid-container" id="grid">
+                <!-- Cells generated via JS -->
+            </div>
+
+            <div style="margin-top:2rem; width:100%; max-width:600px; text-align:center;">
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:10px;">
+                    Histori Kemenangan Terakhir:
+                </p>
+                <div id="historyBar" style="display:flex; justify-content:center; gap:10px;">
+                    <!-- JS Injected history -->
+                    <span style="opacity:0.3; font-size:0.8rem;">-</span>
+                </div>
+            </div>
+
+            <!-- Mobile Bottom Spacer -->
+            <div style="height: 100px;" class="mobile-only"></div>
+        </main>
+
+        <!-- Right Panel: Betting Slip (Desktop) -->
+        <aside class="right-panel">
+            <div class="balance-card">
+                <div style="font-size:0.8rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px;">
+                    Saldo Anda</div>
+                <div class="balance-amount">IDR <span id="balanceDisplay">0</span></div>
+            </div>
+
+            <div class="bet-slip">
+                <div class="slip-header">TIKET TARUHAN</div>
+
+                <div class="slip-items" id="slipItems">
+                    <div style="text-align:center; color:#999; margin-top:50px; font-style:italic;">
+                        Klik angka di grid untuk memasang taruhan
+                    </div>
+                </div>
+
+                <div class="slip-total">
+                    <span>TOTAL</span>
+                    <span>IDR <span id="totalBetDisplay">0</span></span>
+                </div>
+            </div>
+
+            <button id="spinBtn" class="btn">PASANG & PUTAR</button>
+
+            <div style="margin-top:1rem; text-align:center; font-size:0.8rem; color:#aaa;">
+                Max Win: 66x | Min Bet: 100.000
+            </div>
+        </aside>
+
+        <!-- Mobile Bottom Betting Slip (Visible only on mobile) -->
+        <div class="mobile-slip" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <div style="font-size:0.9rem; color:#aaa;">Total Bet: <span id="mobileTotalBet"
+                        style="color:white; font-weight:bold;">0</span></div>
+                <div style="font-size:0.8rem; color:var(--primary);" onclick="window.location.href='user.html'">Kembali
+                    ke Lobby</div>
+            </div>
+            <button id="mobileSpinBtn" class="btn">PUTAR</button>
+        </div>
+
+    </div>
+
+    <!-- Bet Input Modal -->
+    <div class="modal-overlay" id="betModal">
+        <div class="modal-content">
+            <h3 style="color:white; margin-bottom:5px;">Pasang Taruhan</h3>
+            <p style="color:var(--primary); font-size:2rem; font-weight:800; margin-bottom:1.5rem;">Angka <span
+                    id="modalTargetNum">0</span></p>
+
+            <div class="input-group">
+                <input type="number" id="modalBetAmount" value="100000" min="100000" step="100000"
+                    placeholder="Jumlah (IDR)" style="text-align:center; font-size:1.5rem;">
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+                <button class="btn" style="background:rgba(255,255,255,0.1);" onclick="closeBetModal()">Batal</button>
+                <button class="btn" onclick="confirmBet()">Konfirmasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    <div class="toast" id="toast">Notifikasi Sistem</div>
+
+    <script>
+        // Auth Logic
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser) window.location.href = 'login.html';
+        document.getElementById('usernameDisplay').textContent = currentUser;
+
+        // Elements
+        const grid = document.getElementById('grid');
+        const spinBtn = document.getElementById('spinBtn');
+        const mobileSpinBtn = document.getElementById('mobileSpinBtn');
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const mobileBalance = document.getElementById('mobileBalance');
+        const totalBetDisplay = document.getElementById('totalBetDisplay');
+        const mobileTotalBet = document.getElementById('mobileTotalBet');
+        const slipItemsEl = document.getElementById('slipItems');
+        const historyBar = document.getElementById('historyBar');
+
+        // Modal
+        const betModal = document.getElementById('betModal');
+        const modalTargetNum = document.getElementById('modalTargetNum');
+        const modalBetAmount = document.getElementById('modalBetAmount');
+
+        // State
+        let storedBalance = parseInt(localStorage.getItem('balance_' + currentUser)) || 0;
+        balanceDisplay.textContent = storedBalance.toLocaleString();
+        if (mobileBalance) mobileBalance.textContent = storedBalance.toLocaleString();
+
+        const MAX_SELECTIONS = 5;
+        let selectedBets = new Map(); // Index -> Amount
+        let isSpinning = false;
+        let currentTargetIndex = -1;
+        let history = []; // Store recent winners
+
+        // Init Grid
+        for (let i = 0; i < 36; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.textContent = i + 1;
+            cell.dataset.index = i;
+            cell.addEventListener('click', () => handleCellClick(i, cell));
+            grid.appendChild(cell);
+        }
+
+        // Logic
+        function handleCellClick(index, cell) {
+            if (isSpinning) return;
+            if (selectedBets.has(index)) {
+                removeBet(index);
+            } else {
+                if (selectedBets.size >= MAX_SELECTIONS) {
+                    showToast("Maksimal 5 angka!");
+                    return;
+                }
+                openBetModal(index);
+            }
+        }
+
+        function openBetModal(index) {
+            currentTargetIndex = index;
+            modalTargetNum.textContent = index + 1;
+            modalBetAmount.value = 100000;
+            betModal.style.display = 'flex';
+            modalBetAmount.focus();
+        }
+
+        function closeBetModal() {
+            betModal.style.display = 'none';
+        }
+
+        function confirmBet() {
+            const amount = parseInt(modalBetAmount.value);
+            if (!amount || amount < 100000) {
+                showToast("Minimal taruhan IDR 100.000");
+                return;
+            }
+            selectedBets.set(currentTargetIndex, amount);
+            updateUI();
+            closeBetModal();
+        }
+
+        function removeBet(index) {
+            selectedBets.delete(index);
+            updateUI();
+        }
+
+        spinBtn.addEventListener('click', startSpin);
+        if (mobileSpinBtn) mobileSpinBtn.addEventListener('click', startSpin);
+
+        function updateUI() {
+            let total = 0;
+            const cells = document.querySelectorAll('.cell');
+
+            // Visual Reset
+            cells.forEach(c => c.classList.remove('selected-target'));
+            slipItemsEl.innerHTML = '';
+
+            if (selectedBets.size === 0) {
+                slipItemsEl.innerHTML = '<div style="text-align:center; color:#999; margin-top:50px; font-style:italic;">Klik angka di grid untuk memasang taruhan</div>';
+                spinBtn.style.opacity = '0.5';
+                if (mobileSpinBtn) mobileSpinBtn.style.opacity = '0.5';
+            } else {
+                spinBtn.style.opacity = '1';
+                if (mobileSpinBtn) mobileSpinBtn.style.opacity = '1';
+
+                // Render List
+                selectedBets.forEach((amount, index) => {
+                    total += amount;
+
+                    // Grid Highlight
+                    cells[index].classList.add('selected-target');
+
+                    // Slip Item (Desktop)
+                    const row = document.createElement('div');
+                    row.className = 'slip-row';
+                    row.innerHTML = `
+                        <span>Angka <b>${index + 1}</b></span>
+                        <span style="font-weight:bold;">${amount.toLocaleString()}</span>
+                        <span style="color:red; cursor:pointer;" onclick="removeBet(${index})">×</span>
+                    `;
+                    slipItemsEl.appendChild(row);
+                });
+            }
+
+            totalBetDisplay.textContent = total.toLocaleString();
+            if (mobileTotalBet) mobileTotalBet.textContent = total.toLocaleString();
+
+            // Update button text
+            const txt = isSpinning ? 'MEMUTAR...' : 'PASANG & PUTAR';
+            spinBtn.textContent = txt;
+            if (mobileSpinBtn) mobileSpinBtn.textContent = isSpinning ? '...' : 'PUTAR';
+        }
+
+        function startSpin() {
+            if (isSpinning) return;
+            if (selectedBets.size === 0) {
+                showToast("Pasang taruhan dulu!");
+                return;
+            }
+
+            let totalNeeded = 0;
+            selectedBets.forEach(a => totalNeeded += a);
+
+            if (storedBalance < totalNeeded) {
+                showToast("Saldo deposit kurang!");
+                return;
+            }
+
+            // Pay first
+            storedBalance -= totalNeeded;
+            saveBalance();
+
+            isSpinning = true;
+            spinBtn.disabled = true;
+            spinBtn.style.opacity = 0.7;
+            spinBtn.textContent = 'MEMUTAR...';
+
+            // Clear outcomes
+            document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'winner'));
+
+            // Target
+            // RANDOM GENERATION or RIGGING
+            let winningIndex;
+
+            // Check Admin Rig (Force)
+            const rigN = localStorage.getItem('rig_number_' + currentUser);
+
+            // Check Winrate
+            let winRate = parseInt(localStorage.getItem('winrate_number_' + currentUser));
+            if (isNaN(winRate)) winRate = 33; // 1/3 odds normally? No, normally 1/36. 33% is HUGE.
+
+            if (rigN) {
+                // Force Override
+                const target = parseInt(rigN) - 1;
+                if (target >= 0 && target < 36) {
+                    winningIndex = target;
+                    showToast("Admin Force: " + (winningIndex + 1));
+                    localStorage.removeItem('rig_number_' + currentUser);
+                }
+            }
+            else {
+                // Winrate Logic
+                const roll = Math.random() * 100;
+                if (roll <= winRate) {
+                    // Favored to Win!
+                    // If user placed a bet, pick one of their bets to win.
+                    // If multiple bets, pick random one.
+                    if (selectedBets.size > 0) {
+                        const keys = Array.from(selectedBets.keys());
+                        winningIndex = keys[Math.floor(Math.random() * keys.length)];
+                        // showToast("Destiny favors you..."); // Hidden mechanic
+                    } else {
+                        winningIndex = Math.floor(Math.random() * 36);
+                    }
+                } else {
+                    // Favored to Lose
+                    // Ensure result is NOT one of their bets (if possible)
+                    let cand;
+                    let safeTries = 0;
+                    do {
+                        cand = Math.floor(Math.random() * 36);
+                        safeTries++;
+                    } while (selectedBets.has(cand) && safeTries < 50);
+                    winningIndex = cand;
+                }
+            }
+
+            // Animate
+            const cells = document.querySelectorAll('.cell');
+            let rounds = 0;
+            let currentHighlight = 0;
+            let speed = 50;
+            const maxRounds = 3; // Spin full circles before slowing
+
+            // Simple sequential spin for clarity
+            function spinAnim() {
+                // Clear previous
+                cells.forEach(c => c.classList.remove('active'));
+
+                // Highlight current
+                cells[currentHighlight].classList.add('active');
+
+                // Determine next step
+                let next = (currentHighlight + 1) % 36;
+
+                // Check stopping condition
+                if (rounds > 36 * maxRounds) {
+                    // We are in stopping phase
+                    if (currentHighlight === winningIndex) {
+                        finalize(winningIndex);
+                        return; // STOP
+                    }
+                    // Slow down
+                    speed += 10;
+                }
+
+                currentHighlight = next;
+                rounds++;
+
+                setTimeout(spinAnim, speed);
+            }
+
+            spinAnim();
+        }
+
+        function finalize(index) {
+            const cells = document.querySelectorAll('.cell');
+            cells[index].classList.add('winner');
+
+            let totalWin = 0;
+            let msg = `Hasil: Angka ${index + 1}`;
+
+            if (selectedBets.has(index)) {
+                const bet = selectedBets.get(index);
+                const win = bet * 66; // High Risk High Return (66x Payout!)
+                totalWin = win;
+                msg = `JACKPOT! Angka ${index + 1} Meledak!`;
+            }
+
+            if (totalWin > 0) {
+                storedBalance += totalWin;
+                saveBalance();
+                showToast(`MENANG! IDR ${totalWin.toLocaleString()}`);
+
+                // Fancy celebration effect?
+            } else {
+                showToast("Zonk! Coba lagi.");
+            }
+
+            // History Update
+            history.unshift(index + 1);
+            if (history.length > 5) history.pop();
+            renderHistory();
+
+            isSpinning = false;
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'PASANG & PUTAR';
+            updateUI();
+        }
+
+        function renderHistory() {
+            historyBar.innerHTML = '';
+            history.forEach(num => {
+                const badge = document.createElement('span');
+                badge.textContent = num;
+                badge.style.background = 'rgba(255,255,255,0.1)';
+                badge.style.padding = '5px 10px';
+                badge.style.borderRadius = '20px';
+                badge.style.fontWeight = 'bold';
+                badge.style.color = '#fff';
+                historyBar.appendChild(badge);
+            });
+        }
+
+        function saveBalance() {
+            localStorage.setItem('balance_' + currentUser, storedBalance);
+            balanceDisplay.textContent = storedBalance.toLocaleString();
+            if (mobileBalance) mobileBalance.textContent = storedBalance.toLocaleString();
+        }
+
+        function logout() {
+            window.location.href = 'user.html';
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin Slot - DemoJudol</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .admin-card {
+            background: rgba(30, 30, 50, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: 0.2s;
+        }
+
+        .user-row:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        .btn-green {
+            background: #00ff6a;
+            color: black;
+        }
+
+        .btn-red {
+            background: #ff003c;
+            color: white;
+        }
+
+        .btn-yellow {
+            background: #ffd700;
+            color: black;
+        }
+
+        .rig-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .rig-option {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .rig-option.active {
+            border-color: var(--primary);
+            background: rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 15px var(--primary-dim);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toast" id="toast">Changes Saved</div>
+
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 2rem; color: #ff003c;">SUPER ADMIN</h2>
+            <nav style="flex-grow:1;">
+                <a href="#" class="nav-link active" onclick="showSection('users')">👥 User Management</a>
+            </nav>
+            <button onclick="logout()" class="btn" style="background: #333; margin-top: auto;">LOGOUT</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content"
+            style="flex: 1; padding: 20px; width: 100%; box-sizing: border-box; overflow-x: hidden;">
+
+            <!-- USERS SECTION -->
+            <div id="section-users" class="admin-section">
+                <h2 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Master Control
+                    Panel</h2>
+                <div class="admin-card" style="padding:0; overflow:visible;">
+                    <table style="width:100%; border-collapse: separate; border-spacing: 0 10px; text-align: left;">
+                        <thead style="color:#888; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;">
+                            <tr>
+                                <th style="padding:0 15px;">User Info</th>
+                                <th style="padding:0 15px;">Stats (IDR)</th>
+                                <th style="padding:0 15px;">🍭 Bonanza</th>
+                                <th style="padding:0 15px;">🍒 Classic</th>
+                                <th style="padding:0 15px;">🎱 Number</th>
+                                <th style="padding:0 15px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userList">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- BONANZA RIG -->
+            <div id="section-bonanza" class="admin-section" style="display:none;">
+                <h2 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Bonanza 6x5
+                    Setting</h2>
+                <div class="admin-card">
+                    <h3 style="margin-bottom:15px; color:yellow;">Tentukan Hasil Spin Berikutnya</h3>
+                    <div class="rig-panel">
+                        <div class="rig-option" onclick="setBonanzaRig(null, this)" id="bnz_normal">
+                            <h4>NORMAL (Random)</h4>
+                            <p style="font-size:0.8rem; color:#888;">Fair Play</p>
+                        </div>
+                        <div class="rig-option" onclick="setBonanzaRig('force_scatter', this)" id="bnz_scatter">
+                            <h4>FORCE SCATTER</h4>
+                            <p style="font-size:0.8rem; color:#888;">Langsung Free Spin</p>
+                        </div>
+                        <div class="rig-option" onclick="setBonanzaRig('force_win', this)" id="bnz_win">
+                            <h4>FORCE BIG WIN</h4>
+                            <p style="font-size:0.8rem; color:#888;">Pecah Banyak (x50+)</p>
+                        </div>
+                        <div class="rig-option" onclick="setBonanzaRig('force_max', this)" id="bnz_max">
+                            <h4>FORCE MAXWIN</h4>
+                            <p style="font-size:0.8rem; color:#888;">Bomb x1000 Keluar</p>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px; font-size:0.9rem; color:#aaa;">
+                        Status: <span id="bonanzaStatus" style="color:white; font-weight:bold;">Normal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLASSIC RIG -->
+            <div id="section-classic" class="admin-section" style="display:none;">
+                <h2 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Classic Slots
+                    Setting</h2>
+                <div class="admin-card">
+                    <h3 style="margin-bottom:15px; color:#ff003c;">Next Spin Result</h3>
+                    <div class="rig-panel">
+                        <div class="rig-option" onclick="setClassicRig(null, this)" id="cls_normal">
+                            <h4>NORMAL</h4>
+                        </div>
+                        <div class="rig-option" onclick="setClassicRig('force_777', this)" id="cls_777">
+                            <h4>JACKPOT 777</h4>
+                        </div>
+                        <div class="rig-option" onclick="setClassicRig('force_diamond', this)" id="cls_diamond">
+                            <h4>JACKPOT DIAMOND</h4>
+                        </div>
+                        <div class="rig-option" onclick="setClassicRig('force_loss', this)" id="cls_loss">
+                            <h4>FORCE ZONK (Kalah)</h4>
+                        </div>
+                    </div>
+                    <div style="margin-top:20px; font-size:0.9rem; color:#aaa;">
+                        Status: <span id="classicStatus" style="color:white; font-weight:bold;">Normal</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NUMBER RIG -->
+            <div id="section-number" class="admin-section" style="display:none;">
+                <h2 style="border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">Lucky Number
+                    Setting</h2>
+                <div class="admin-card">
+                    <p style="margin-bottom:10px;">Klik angka yang AKAN KELUAR:</p>
+                    <div class="grid-container" id="numGrid"
+                        style="grid-template-columns: repeat(6, 1fr); max-width: 400px; margin: 0;">
+                        <!-- JS -->
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button class="btn" style="width:auto; padding: 10px 20px;" onclick="setNumRig(null)">RESET
+                            (Fair Mode)</button>
+                    </div>
+                    <p style="margin-top:10px;">Target: <b id="numTarget" style="color:var(--primary);">Random</b></p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Edit Balance Modal -->
+    <div class="modal-overlay" id="balanceModal" style="display:none;">
+        <div class="modal-content">
+            <h3>Edit Saldo User</h3>
+            <p id="modalUsername" style="color:var(--primary); margin-bottom:10px;"></p>
+            <input type="number" id="newBalanceInput" style="width:100%; margin-bottom:15px;" placeholder="New Balance">
+            <div style="display:flex; gap:10px;">
+                <button class="btn" style="background:#333;" onclick="closeModal()">Batal</button>
+                <button class="btn" onclick="saveBalance()">SIMPAN</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Auth & Nav ---
+        if (localStorage.getItem('role') !== 'admin') window.location.href = 'login.html';
+        function logout() { localStorage.removeItem('role'); window.location.href = 'login.html'; }
+        function showSection(id) {
+            // simplified
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 2000);
+        }
+
+        // --- User Data Management ---
+        function loadUsers() {
+            const list = document.getElementById('userList');
+            // Don't clear innerHTML completely to avoid flicker if we were smarter, but simpler here:
+            const scrollPos = window.scrollY;
+
+            // Get Users
+            let users = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('balance_')) {
+                    const username = key.replace('balance_', '');
+                    const bal = parseInt(localStorage.getItem(key));
+                    let modal = parseInt(localStorage.getItem('modal_' + username)) || 0;
+                    if (modal === 0 && bal > 0) { modal = bal; localStorage.setItem('modal_' + username, modal); }
+                    const profit = bal - modal;
+
+                    users.push({ username, bal, modal, profit });
+                }
+            }
+
+            if (users.length === 0) {
+                list.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center;">No users found. Wait for registration.</td></tr>';
+                return;
+            }
+
+            // sort by name
+            users.sort((a, b) => a.username.localeCompare(b.username));
+
+            // Render
+            // We'll rebuild the list.
+            list.innerHTML = '';
+
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.style.background = 'rgba(255,255,255,0.03)';
+                tr.style.borderRadius = '8px';
+
+                // Read current settings
+                const rigB = localStorage.getItem('rig_bonanza_' + u.username) || 'normal';
+                const rigC = localStorage.getItem('rig_classic_' + u.username) || 'normal';
+                const rigN = localStorage.getItem('rig_number_' + u.username) || '';
+
+                const plClass = u.profit >= 0 ? '#00ff6a' : '#ff003c';
+                const plSign = u.profit >= 0 ? '+' : '';
+
+                tr.innerHTML = `
+                    <td style="padding:15px; border-top-left-radius:8px; border-bottom-left-radius:8px;">
+                        <div style="font-weight:900; color:white; font-size:1rem;">${u.username}</div>
+                        <div style="font-size:0.75rem; color:#666; cursor:pointer;" onclick="openBalanceModal('${u.username}', ${u.bal})">Edit Saldo</div>
+                    </td>
+                    <td style="padding:15px;">
+                        <div style="font-family:monospace; color:#ccc;">IDR ${u.bal.toLocaleString()}</div>
+                        <div style="font-size:0.8rem; color:${plClass};">${plSign}${u.profit.toLocaleString()}</div>
+                    </td>
+                    
+                    <!-- BONANZA -->
+                    <td style="padding:10px;">
+                        <input type="number" id="win_b_${u.username}" value="${localStorage.getItem('winrate_bonanza_' + u.username) || 50}" 
+                            min="10" max="100" style="width:50px; padding:5px; background:#111; color:cyan; border:1px solid #333; margin-right:5px; border-radius:4px;" title="Win Percentage">
+                            
+                        <select id="rig_b_${u.username}" style="background:#111; color:#888; border:1px solid #333; padding:5px; border-radius:4px; max-width:80px;">
+                            <option value="normal" ${rigB == 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="force_max" ${rigB == 'force_max' ? 'selected' : ''}>Maxwin</option>
+                        </select>
+                    </td>
+
+                    <!-- CLASSIC -->
+                    <td style="padding:10px;">
+                        <input type="number" id="win_c_${u.username}" value="${localStorage.getItem('winrate_classic_' + u.username) || 50}" 
+                            min="10" max="100" style="width:50px; padding:5px; background:#111; color:cyan; border:1px solid #333; margin-right:5px; border-radius:4px;" title="Win Percentage">
+
+                        <select id="rig_c_${u.username}" style="background:#111; color:#888; border:1px solid #333; padding:5px; border-radius:4px; max-width:80px;">
+                            <option value="normal" ${rigC == 'normal' ? 'selected' : ''}>Normal</option>
+                            <option value="jackpot" ${rigC == 'jackpot' ? 'selected' : ''}>777</option>
+                        </select>
+                    </td>
+
+                    <!-- NUMBER -->
+                    <td style="padding:10px;">
+                         <input type="number" id="win_n_${u.username}" value="${localStorage.getItem('winrate_number_' + u.username) || 33}" 
+                            min="10" max="100" style="width:50px; padding:5px; background:#111; color:cyan; border:1px solid #333; margin-right:5px; border-radius:4px;" title="Win Percentage">
+                            
+                        <input type="number" id="rig_n_${u.username}" value="${rigN}" placeholder="#" min="1" max="36" 
+                            style="background:#111; color:#fff; border:1px solid #333; padding:5px; border-radius:4px; width:40px; text-align:center;">
+                    </td>
+
+                    <td style="padding:15px; border-top-right-radius:8px; border-bottom-right-radius:8px;">
+                        <button class="btn" style="width:auto; padding:8px 15px; font-size:0.75rem; background:linear-gradient(45deg, #00ff6a, #00cc55); color:black; font-weight:bold;" 
+                            onclick="applyAll('${u.username}')">SAVE</button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+
+            // Restore scroll if needed
+        }
+
+        function applyAll(user) {
+            // Get Rigs
+            const rb = document.getElementById('rig_b_' + user).value;
+            const rc = document.getElementById('rig_c_' + user).value;
+            const rn = document.getElementById('rig_n_' + user).value;
+
+            // Get Winrates
+            const wb = document.getElementById('win_b_' + user).value;
+            const wc = document.getElementById('win_c_' + user).value;
+            const wn = document.getElementById('win_n_' + user).value;
+
+            // Save
+            localStorage.setItem('rig_bonanza_' + user, rb);
+            localStorage.setItem('rig_classic_' + user, rc);
+            if (rn) localStorage.setItem('rig_number_' + user, rn);
+            else localStorage.removeItem('rig_number_' + user);
+
+            // Save Winrates
+            localStorage.setItem('winrate_bonanza_' + user, wb);
+            localStorage.setItem('winrate_classic_' + user, wc);
+            localStorage.setItem('winrate_number_' + user, wn);
+
+            showToast(`Settings Saved for ${user}`);
+            loadUsers();
+        }
+
+        // --- Balance Modal ---
+        const balanceModal = document.getElementById('balanceModal');
+        const modalUsername = document.getElementById('modalUsername');
+        const newBalanceInput = document.getElementById('newBalanceInput');
+        let editingUser = null;
+
+        function openBalanceModal(user, currentBal) {
+            editingUser = user;
+            modalUsername.textContent = user;
+            newBalanceInput.value = currentBal;
+            balanceModal.style.display = 'flex';
+        }
+        function closeModal() { balanceModal.style.display = 'none'; }
+        function saveBalance() {
+            if (!editingUser) return;
+            const val = parseInt(newBalanceInput.value);
+            if (isNaN(val)) return;
+            localStorage.setItem('balance_' + editingUser, val);
+            showToast(`Saldo ${editingUser} updated!`);
+            closeModal();
+            loadUsers();
+        }
+        function resetUser(user) { /* Deprecated inline, moved to modal or just edit to 0 */ }
+
+        // --- RIGGING: BONANZA ---
+        function setBonanzaRig(type, el) {
+            if (type === null) {
+                localStorage.removeItem('rig_bonanza');
+                document.getElementById('bonanzaStatus').textContent = "Normal (Fair)";
+            } else {
+                localStorage.setItem('rig_bonanza', type); // 'force_scatter', 'force_max'
+                document.getElementById('bonanzaStatus').textContent = type.toUpperCase().replace('_', ' ');
+            }
+
+            // Visual Update
+            document.querySelectorAll('#section-bonanza .rig-option').forEach(d => d.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            showToast('Bonanza Rig Updated!');
+        }
+
+        // --- RIGGING: CLASSIC ---
+        function setClassicRig(type, el) {
+            if (type === null) {
+                localStorage.removeItem('rig_classic');
+                document.getElementById('classicStatus').textContent = "Normal (Fair)";
+            } else {
+                localStorage.setItem('rig_classic', type);
+                document.getElementById('classicStatus').textContent = type.toUpperCase().replace('_', ' ');
+            }
+            document.querySelectorAll('#section-classic .rig-option').forEach(d => d.classList.remove('active'));
+            if (el) el.classList.add('active');
+            showToast('Classic Rig Updated!');
+        }
+
+        // --- RIGGING: NUMBER ---
+        const numGrid = document.getElementById('numGrid');
+        function initNumGrid() {
+            numGrid.innerHTML = '';
+            const current = localStorage.getItem('adminTargetIndex');
+
+            for (let i = 0; i < 36; i++) {
+                const d = document.createElement('div');
+                d.className = 'cell';
+                d.textContent = i + 1;
+                d.style.width = '40px';
+                d.style.height = '40px';
+                d.style.fontSize = '0.9rem';
+
+                if (current !== null && i == current) d.classList.add('active');
+
+                d.onclick = () => setNumRig(i);
+                numGrid.appendChild(d);
+            }
+            document.getElementById('numTarget').textContent = current !== null ? (parseInt(current) + 1) : 'Random';
+        }
+
+        function setNumRig(idx) {
+            if (idx === null) localStorage.removeItem('adminTargetIndex');
+            else localStorage.setItem('adminTargetIndex', idx);
+            initNumGrid();
+            showToast('Number Target Saved');
+        }
+
+        // Init
+        initNumGrid();
+
+        // Load existing states
+        const rigB = localStorage.getItem('rig_bonanza');
+        if (rigB) {
+            document.getElementById('bonanzaStatus').textContent = rigB;
+            // Try to highlight (simple logic)
+            if (rigB === 'force_scatter') document.getElementById('bnz_scatter').classList.add('active');
+            if (rigB === 'force_max') document.getElementById('bnz_max').classList.add('active');
+        } else {
+            document.getElementById('bnz_normal').classList.add('active');
+        }
+
+        const rigC = localStorage.getItem('rig_classic');
+        if (rigC) {
+            document.getElementById('classicStatus').textContent = rigC;
+        } else {
+            document.getElementById('cls_normal').classList.add('active');
+        }
+
+        // Refresh every 5s to catch new users or balance changes, but not too annoying
+        loadUsers();
+        // setInterval(loadUsers, 5000); 
+
+    </script>
+</body>
+
+</html>

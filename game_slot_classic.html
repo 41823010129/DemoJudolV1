@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classic Slots - DemoJudol</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .jackpot-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            gap: 10px;
+        }
+
+        .jp-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .jp-title {
+            font-size: 0.7rem;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .jp-val {
+            font-weight: bold;
+            color: #ebd834;
+            font-size: 0.9rem;
+        }
+
+        .jp-grand {
+            box-shadow: 0 0 10px rgba(235, 216, 52, 0.2);
+            border-color: rgba(235, 216, 52, 0.5);
+        }
+
+        .slot-machine {
+            background: #222;
+            padding: 20px;
+            border-radius: 20px;
+            border: 4px solid #333;
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.8);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            height: 150px;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .reel {
+            background: #fff;
+            flex: 1;
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #333;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .reel.spinning {
+            animation: reelSpin 0.1s infinite linear;
+            border-color: var(--primary);
+            box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.2);
+        }
+
+        @keyframes reelSpin {
+            0% {
+                transform: translateY(-50px);
+            }
+
+            100% {
+                transform: translateY(50px);
+            }
+        }
+
+        .win-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: red;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 0 10px red;
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(-20px);
+            }
+
+            50% {
+                transform: translateY(10px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toast" id="toast">Msg</div>
+
+    <div class="container">
+        <div class="glass-card">
+            <button onclick="window.location.href='user.html'"
+                style="margin-bottom: 1rem; background: transparent; border: none; color: #fff; cursor: pointer;">←
+                Lobby</button>
+
+            <div class="user-header">
+                <div class="user-info">CLASSIC <span>SLOTS</span></div>
+                <div class="balance">IDR <span id="balanceDisplay">0</span></div>
+            </div>
+
+            <div class="jackpot-display">
+                <div class="jp-box">
+                    <div class="jp-title">MINI</div>
+                    <div class="jp-val">IDR 500,000</div>
+                </div>
+                <div class="jp-box">
+                    <div class="jp-title">MAJOR</div>
+                    <div class="jp-val">IDR 2,500,000</div>
+                </div>
+                <div class="jp-box jp-grand">
+                    <div class="jp-title">GRAND</div>
+                    <div class="jp-val">IDR 50,000,000</div>
+                </div>
+            </div>
+
+            <div class="slot-machine">
+                <div class="win-line" id="winLine"></div>
+                <div class="reel" id="reel1">7</div>
+                <div class="reel" id="reel2">7</div>
+                <div class="reel" id="reel3">7</div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <div style="flex:1;">
+                    <label style="display:block; color:#aaa; font-size:0.8rem; margin-bottom:5px;">Jumlah Spin</label>
+                    <input type="number" id="spinCountInput" value="1" min="1" max="100"
+                        style="padding:10px; width:100%; text-align:center; background:rgba(0,0,0,0.5); border:1px solid #444; color:white; border-radius:10px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; color:#aaa; font-size:0.8rem; margin-bottom:5px;">Taruhan (IDR)</label>
+                    <input type="number" id="betInput" value="100000" min="100000" step="100000"
+                        style="padding:10px; width:100%; text-align:center; background:rgba(0,0,0,0.5); border:1px solid #444; color:white; border-radius:10px;">
+                </div>
+            </div>
+
+            <button id="spinBtn" class="btn">PUTAR</button>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser) window.location.href = 'login.html';
+
+        let storedBalance = parseInt(localStorage.getItem('balance_' + currentUser)) || 0;
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        balanceDisplay.textContent = storedBalance.toLocaleString();
+
+        const SYMBOLS = ['🍒', '🍋', '🍇', '💎', '7️⃣', '🔔'];
+        const REELS = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+        const winLine = document.getElementById('winLine');
+        const spinBtn = document.getElementById('spinBtn');
+        const betInput = document.getElementById('betInput');
+        const spinInput = document.getElementById('spinCountInput');
+
+        let isSpinning = false;
+        let spinIntervals = [null, null, null];
+
+        // Auto-update button text
+        function updateButtonText() {
+            if (isSpinning) return;
+            const bet = parseInt(betInput.value) || 0;
+            const spins = parseInt(spinInput.value) || 0;
+            const total = bet * spins;
+            spinBtn.textContent = `PUTAR (Total: ${total.toLocaleString()})`;
+        }
+
+        betInput.addEventListener('input', updateButtonText);
+        spinInput.addEventListener('input', updateButtonText);
+
+        // Init text
+        updateButtonText();
+
+        spinBtn.addEventListener('click', async () => {
+            if (isSpinning) return;
+
+            const betAmount = parseInt(betInput.value);
+            const totalSpins = parseInt(spinInput.value);
+
+            if (!betAmount || betAmount < 100000) { showToast("Minimal taruhan 100.000"); return; }
+            if (!totalSpins || totalSpins < 1) { showToast("Minimal 1 spin"); return; }
+
+            isSpinning = true;
+            spinBtn.disabled = true;
+
+            for (let i = 0; i < totalSpins; i++) {
+                // Check Balance before each spin
+                if (storedBalance < betAmount) {
+                    showToast("Saldo habis!");
+                    break;
+                }
+
+                // Update UI for Auto Spin
+                if (totalSpins > 1) {
+                    spinBtn.textContent = `AUTO SPIN (${i + 1}/${totalSpins})...`;
+                } else {
+                    spinBtn.textContent = "MEMUTAR...";
+                }
+
+                // Deduct Cost
+                storedBalance -= betAmount;
+                saveBalance();
+
+                // Run Single Spin
+                await runSpinLogic(betAmount);
+
+                // Delay between spins if auto
+                if (i < totalSpins - 1) {
+                    await new Promise(r => setTimeout(r, 1000));
+                }
+            }
+
+            isSpinning = false;
+            spinBtn.disabled = false;
+            updateButtonText();
+        });
+
+        function runSpinLogic(currentBet) {
+            return new Promise((resolve) => {
+                winLine.style.display = 'none';
+
+                // Start Animations
+                REELS.forEach((reel, index) => {
+                    reel.classList.add('spinning');
+                    if (spinIntervals[index]) clearInterval(spinIntervals[index]);
+                    spinIntervals[index] = setInterval(() => {
+                        reel.textContent = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                    }, 50);
+                });
+
+                // Stop Sequence
+                setTimeout(() => stopReel(0, currentBet), 1000);
+                setTimeout(() => stopReel(1, currentBet), 1500);
+                setTimeout(() => stopReel(2, currentBet, resolve), 2000);
+            });
+        }
+
+        // Store final symbols
+        let results = [];
+
+        // ADMIN RIGGING CHECK (User Specific)
+        function getRiggedSymbol(index) {
+            const userRig = localStorage.getItem('rig_classic_' + currentUser) || 'normal';
+            let winRate = parseInt(localStorage.getItem('winrate_classic_' + currentUser));
+            if (isNaN(winRate)) winRate = 50;
+
+            // Check Winrate Falloff (Executed only once at start of spin ideally, but here per reel is okayish if consistent)
+            // Ideally we decide outcomes before spinning.
+            // Let's rely on random here: if any reel calls this, we check global state? 
+            // Better: Check winrate once and determine if we force loss.
+            // Hack: We'll check randomly per reel but biased? No, that's bad.
+            // Let's use a "session" luck decision.
+            // Simplification: 
+
+            // Override 1: Explicit Rig
+            if (userRig === 'jackpot') {
+                if (index === 2) { localStorage.setItem('rig_classic_' + currentUser, 'normal'); showToast("JACKPOT!"); }
+                return '7️⃣';
+            }
+            if (userRig === 'hangus') {
+                return (index === 0 ? '🍒' : (index === 1 ? '🍋' : '🍇')); // Force mismatch
+            }
+
+            // Override 2: Winrate Check (Probability to FORCE LOSS)
+            const roll = Math.random() * 100;
+            if (roll > winRate) {
+                // Return junk to ensure no win if luck is bad
+                return ['🍒', '🍋', '🍇', '🍉'][Math.floor(Math.random() * 4)];
+            }
+
+            return null; // Update: Normal random game logic applies
+        }
+
+        function stopReel(index, currentBet, resolveCallback) {
+            clearInterval(spinIntervals[index]);
+            const reel = REELS[index];
+            reel.classList.remove('spinning');
+
+            // Determine Symbol
+            let symbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+
+            // Apply Rig
+            const rigged = getRiggedSymbol(index);
+            if (rigged) symbol = rigged;
+
+            reel.textContent = symbol;
+            results[index] = symbol;
+
+            reel.style.animation = 'bounce 0.3s ease-out';
+            setTimeout(() => { reel.style.animation = 'none'; }, 300);
+
+            if (index === 2) {
+                checkWin(currentBet);
+                if (resolveCallback) resolveCallback();
+            }
+        }
+
+        function checkWin(bet) {
+            if (results[0] === results[1] && results[1] === results[2]) {
+                const s = results[0];
+                let multiplier = 20; // Base High Return
+                if (s === '7️⃣') multiplier = 500;
+                if (s === '💎') multiplier = 200;
+
+                // High Roller Bonus Logic (> 200k bet)
+                if (bet >= 200000) {
+                    if (s === '7️⃣') multiplier = 1000; // x1000 for Whales!
+                    else multiplier *= 2; // Double all other wins
+                }
+
+                const win = bet * multiplier;
+                storedBalance += win;
+                saveBalance();
+
+                winLine.style.display = 'block';
+                showToast(`JACKPOT! Win: IDR ${win.toLocaleString()}`);
+            } else if (results[0] === results[1] || results[1] === results[2]) {
+                showToast("Dikit lagi!");
+            } else {
+                // showToast("Coba Lagi"); // Too spammy for auto spin
+            }
+        }
+
+        function saveBalance() {
+            localStorage.setItem('balance_' + currentUser, storedBalance);
+            balanceDisplay.textContent = storedBalance.toLocaleString();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bonanza 6x6 - DemoJudol</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        .grid-6x5 {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 5px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            height: 400px;
+            /* Fixed height for animation container */
+            overflow: hidden;
+            position: relative;
+        }
+
+        .item {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            position: relative;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            /* Initial state for JS animation */
+            transform: translateY(-500px);
+        }
+
+        .item.bomb {
+            background: url('https://cdn-icons-png.flaticon.com/512/112/112683.png') center/70% no-repeat, radial-gradient(circle, #000 0%, #333 100%);
+            border: 2px solid red;
+            font-size: 0;
+            /* Hide text */
+            box-shadow: 0 0 15px red;
+            z-index: 20;
+        }
+
+        .item.scatter {
+            background: radial-gradient(circle, #ffd700 0%, #ff8c00 100%);
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 900;
+            box-shadow: 0 0 20px gold;
+            animation: spinScatter 2s infinite linear;
+            z-index: 25;
+        }
+
+        @keyframes spinScatter {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(360deg);
+            }
+        }
+
+        .free-spin-notify.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        @media (max-width: 768px) {
+            .grid-6x5 {
+                height: auto;
+                aspect-ratio: 6/5;
+                gap: 3px;
+                padding: 5px;
+            }
+
+            .main-content {
+                padding: 10px !important;
+            }
+
+            .mobile-header {
+                display: flex !important;
+            }
+        }
+
+        @keyframes fallDown {
+            from {
+                transform: translateY(-500px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes popScore {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.5);
+                color: #fff;
+                text-shadow: 0 0 20px #fff;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .score-popup {
+            position: absolute;
+            font-weight: 900;
+            color: yellow;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 5px black;
+            z-index: 100;
+            animation: floatUp 1s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes floatUp {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+        }
+
+        .win-display {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #00ff66;
+            text-align: center;
+            height: 40px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 255, 102, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="toast" id="toast">Msg</div>
+
+    <div class="app-layout">
+        <!-- Mobile Header -->
+        <div class="mobile-header" style="display:none;">
+            <div style="font-weight:800; color:white;">BONANZA 6x5</div>
+            <div style="font-size:0.9rem; color:var(--primary); font-weight:bold;">IDR <span id="mobileBalance">0</span>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2 style="margin-bottom: 2rem; display:flex; align-items:center; gap:10px;">
+                <span
+                    style="background:var(--primary); width:12px; height:12px; border-radius:50%; display:inline-block;"></span>
+                DemoJudol
+            </h2>
+            <nav style="flex-grow:1;">
+                <a href="user.html" class="nav-link">Lobby Utama</a>
+                <a href="game_number.html" class="nav-link">Lucky 66 Number</a>
+                <a href="game_slot_classic.html" class="nav-link">Classic Slots</a>
+                <a href="#" class="nav-link active">Bonanza 6x6</a>
+                <a href="deposit.html" class="nav-link">Isi Saldo (Deposit)</a>
+            </nav>
+            <div class="balance-card"
+                style="margin-bottom:0; padding:1rem; border:1px solid rgba(255,255,255,0.05); background: rgba(255,255,255,0.03);">
+                <div style="font-size:0.8rem; color:var(--text-muted);">User Account</div>
+                <div id="usernameDisplay" style="font-weight:700; margin-bottom:5px;">Loading...</div>
+                <button onclick="logout()"
+                    style="width:100%; padding:8px; border:1px solid rgba(255,0,60,0.3); background:transparent; color:#ff003c; border-radius:8px; cursor:pointer; font-size:0.8rem; margin-top:5px;">LOGOUT</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="desktop-only"
+                style="width:100%; max-width:600px; display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3>BONANZA <span style="color:yellow;">6x5</span></h3>
+                <div style="font-size:0.9rem; color:var(--text-muted);">Mode Runtuhan (Tumbling)</div>
+            </div>
+
+            <div class="win-display" id="winDisplay"></div>
+            <div id="multDisplay"
+                style="text-align:center; color:yellow; font-weight:bold; height:20px; margin-bottom:5px;"></div>
+
+            <div style="width:100%; max-width:500px;">
+                <div class="grid-6x5" id="grid">
+                    <!-- Items -->
+                </div>
+            </div>
+
+            <div class="mobile-only" style="height:100px;"></div>
+        </main>
+
+        <!-- Right Panel (Desktop Controls) -->
+        <aside class="right-panel">
+            <div class="balance-card">
+                <div style="font-size:0.8rem; color:var(--text-muted);">SALDO ANDA</div>
+                <div class="balance-amount">IDR <span id="balanceDisplay">0</span></div>
+            </div>
+
+            <div class="glass-card" style="padding:1.5rem; flex-grow:0;">
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">Taruhan (IDR)</label>
+                    <input id="betInput" type="number" value="100000" min="100000" step="100000" style="width:100%;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="font-size:0.8rem; color:#aaa; display:block; margin-bottom:5px;">Jumlah Spin</label>
+                    <input id="spinCountInput" type="number" value="1" min="1" max="100" style="width:100%;">
+                </div>
+                <button id="spinBtn" class="btn">PUTAR</button>
+            </div>
+
+            <div style="margin-top:20px; text-align:center; color:#666; font-size:0.8rem;">
+                Simbol Scatter: <b>S</b><br>
+                Dapatkan 4 Scatter untuk 10 Free Spins!
+            </div>
+        </aside>
+
+        <!-- Mobile Bottom Control -->
+        <div class="mobile-slip" style="display:none;">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:5px;">
+                <span style="font-size:0.8rem; color:var(--primary); cursor:pointer;"
+                    onclick="window.location.href='user.html'">Kembali ke Lobby</span>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <input id="mobileBetInput" type="number" placeholder="Bet" value="100000" min="100000" step="100000"
+                    style="width:100%; padding:8px; border-radius:8px;">
+                <input id="mobileSpinInput" type="number" placeholder="Spin" value="1"
+                    style="width:80px; padding:8px; border-radius:8px;">
+            </div>
+            <button id="mobileSpinBtn" class="btn">PUTAR</button>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = localStorage.getItem('currentUser');
+        if (!currentUser) window.location.href = 'login.html';
+
+        let storedBalance = parseInt(localStorage.getItem('balance_' + currentUser)) || 0;
+        const balanceDisplay = document.getElementById('balanceDisplay');
+        const grid = document.getElementById('grid');
+        const spinBtn = document.getElementById('spinBtn');
+        const winDisplay = document.getElementById('winDisplay');
+        const multDisplay = document.getElementById('multDisplay');
+
+        const fsNotify = document.getElementById('fsNotify');
+
+        let freeSpinsLeft = 0;
+        let isFreeSpinMode = false;
+        let currentBetAmount = 0;
+
+        // Inputs
+        const betInput = document.getElementById('betInput');
+        const spinCountInput = document.getElementById('spinCountInput');
+        const mobileBetInput = document.getElementById('mobileBetInput');
+        const mobileSpinInput = document.getElementById('mobileSpinInput');
+
+        // Sync Inputs
+        function syncInputs() {
+            if (mobileBetInput) mobileBetInput.value = betInput.value;
+            if (mobileSpinInput) mobileSpinInput.value = spinCountInput.value;
+        }
+        betInput.addEventListener('input', () => { if (mobileBetInput) mobileBetInput.value = betInput.value; });
+        spinCountInput.addEventListener('input', () => { if (mobileSpinInput) mobileSpinInput.value = spinCountInput.value; });
+
+        if (mobileBetInput) mobileBetInput.addEventListener('input', () => { betInput.value = mobileBetInput.value; });
+        if (mobileSpinInput) mobileSpinInput.addEventListener('input', () => { spinCountInput.value = mobileSpinInput.value; });
+
+        balanceDisplay.textContent = storedBalance.toLocaleString();
+        if (document.getElementById('mobileBalance')) document.getElementById('mobileBalance').textContent = storedBalance.toLocaleString();
+        if (document.getElementById('usernameDisplay')) document.getElementById('usernameDisplay').textContent = currentUser;
+
+        // High Risk High Return: More symbols to dilute pool, making clusters harder
+        const SYMBOLS = ['🍭', '🍬', '🍇', '🍉', '🍌', '💎', '🍒', '🍋', '🫐', '🥝'];
+
+        // Render Empty
+        renderEmptyGrid();
+
+        function renderEmptyGrid() {
+            grid.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                const el = document.createElement('div');
+                el.className = 'item';
+                el.style.transform = 'translateY(0)';
+                el.textContent = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                grid.appendChild(el);
+            }
+        }
+
+        const mobileSpinBtn = document.getElementById('mobileSpinBtn');
+
+        async function handleSpin() {
+            if (isFreeSpinMode) return;
+
+            const bet = parseInt(betInput.value);
+            const totalSpins = parseInt(spinCountInput.value);
+
+            if (isNaN(bet) || bet < 100000) { showToast("Minimal Bet 100.000"); return; }
+            if (isNaN(totalSpins) || totalSpins < 1) { showToast("Minimal Spin 1"); return; }
+
+            if (bet >= 200000) {
+                showToast("🔥 MODE SULTAN AKTIF! (Multiplier Upgraded)");
+            } else if (bet >= 50000) {
+                showToast("⚡ HIGH ROLLER! (Better Odds)");
+            }
+
+            setSpinState(true);
+            currentBetAmount = bet;
+
+            for (let i = 0; i < totalSpins; i++) {
+                if (isFreeSpinMode) {
+                    await playFreeSpins();
+                    break;
+                }
+
+                if (storedBalance < bet) {
+                    showToast("Saldo Habis");
+                    break;
+                }
+
+                storedBalance -= bet;
+                saveBalance();
+
+                const statusText = `AUTO (${i + 1}/${totalSpins})...`;
+                spinBtn.textContent = statusText;
+                if (mobileSpinBtn) mobileSpinBtn.textContent = statusText;
+
+                await playRound(bet, false);
+
+                await new Promise(r => setTimeout(r, 1000));
+            }
+
+            if (!isFreeSpinMode) {
+                setSpinState(false);
+            }
+        }
+
+        spinBtn.addEventListener('click', handleSpin);
+        if (mobileSpinBtn) mobileSpinBtn.addEventListener('click', handleSpin);
+
+        function setSpinState(disabled) {
+            spinBtn.disabled = disabled;
+            if (mobileSpinBtn) mobileSpinBtn.disabled = disabled;
+
+            if (!disabled) {
+                spinBtn.textContent = "PUTAR";
+                if (mobileSpinBtn) mobileSpinBtn.textContent = "PUTAR";
+            }
+        }
+
+        async function playFreeSpins() {
+            document.body.classList.add('gold-mode');
+            const txt = `FREE SPIN SESI...`;
+            spinBtn.textContent = txt;
+            if (mobileSpinBtn) mobileSpinBtn.textContent = txt;
+
+            while (freeSpinsLeft > 0) {
+                winDisplay.textContent = `FREE SPIN LEFT: ${freeSpinsLeft}`;
+                freeSpinsLeft--;
+
+                // Free Spin Round (Visuals)
+                await playRound(currentBetAmount, true); // true = bonus mode
+
+                await new Promise(r => setTimeout(r, 1500));
+            }
+
+            // End Free Spins
+            isFreeSpinMode = false;
+            document.body.classList.remove('gold-mode');
+            showToast("FREE SPINS SELESAI");
+            setSpinState(false);
+        }
+
+        function playRound(bet, isBonus) {
+            return new Promise(resolve => {
+                grid.innerHTML = '';
+                multDisplay.textContent = isBonus ? "BONUS MODE!" : "Total Multiplier: x0";
+
+                const content = [];
+                const multipliers = [];
+                let scatterCount = 0;
+
+                // ADMIN RIGGING (User Specific)
+                const userRig = localStorage.getItem('rig_bonanza_' + currentUser) || 'normal';
+                let winRate = parseInt(localStorage.getItem('winrate_bonanza_' + currentUser));
+                if (isNaN(winRate)) winRate = 50; // Default 50%
+
+                // Defaults
+                let forceScatter = false;
+                let forceMax = false;
+                let forceLoss = false;
+
+                // 1. Check Winrate first
+                const luckyRoll = Math.random() * 100;
+                if (luckyRoll > winRate) {
+                    forceLoss = true; // Lost the roll against Winrate
+                }
+
+                // 2. Check Overrides (Overrides winrate)
+                if (userRig === 'force_scatter') { forceScatter = true; forceLoss = false; }
+                if (userRig === 'force_max') {
+                    forceMax = true;
+                    forceLoss = false;
+                    showToast("MAXWIN COMING!");
+                    localStorage.setItem('rig_bonanza_' + currentUser, 'normal');
+                }
+                if (userRig === 'rtp_10') { // This was part of the original 'Interpret Settings'
+                    if (Math.random() > 0.1) forceLoss = true;
+                }
+
+                for (let i = 0; i < 30; i++) {
+                    let sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                    let isBomb = false;
+                    let isScatter = false;
+
+                    const rand = Math.random();
+
+                    // --- FORCE LOSS LOGIC ---
+                    if (forceLoss) {
+                        sym = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                    }
+
+                    // --- FORCE WIN / NORMAL LOGIC ---
+                    else {
+                        if (forceMax && !isScatter) {
+                            if (i < 12) sym = '💎';
+                        }
+
+                        // --- NORMAL LOGIC (Overridden if enforcing forceMax) ---
+                        if (!isScatter && !forceMax) { // Don't interfere if enforcing forceMax
+                            // Force Scatter Logic
+                            if ((forceScatter || (rand < 0.02 && !isBonus))) {
+                                if (forceScatter || !isBonus) {
+                                    // Ensure we don't over-scatter if random
+                                    if (forceScatter && scatterCount < 4) {
+                                        if (i < 4 || (30 - i) <= (4 - scatterCount)) {
+                                            sym = 'SCATTER'; isScatter = true; scatterCount++;
+                                        }
+                                    } else if (!forceScatter) {
+                                        if (rand < 0.02) { sym = 'SCATTER'; isScatter = true; scatterCount++; }
+                                    }
+                                }
+                            }
+
+                            // Bomb Logic
+                            if (!isScatter && (rand < (isBonus ? 0.20 : 0.03))) {
+                                sym = 'bomb';
+                                isBomb = true;
+
+                                let vals = isBonus ? [50, 100, 500, 1000] : [10, 25, 50, 100, 500];
+
+                                if (bet >= 50000 && bet < 200000) vals = isBonus ? [100, 500, 1000] : [25, 50, 100, 500];
+                                else if (bet >= 200000) vals = isBonus ? [500, 1000] : [50, 100, 500, 1000];
+
+                                // RIGGING OVERRIDE
+                                if (forceMax) vals = [1000];
+
+                                const bombVal = vals[Math.floor(Math.random() * vals.length)];
+                                multipliers.push({ index: i, val: bombVal });
+                            }
+                        }
+                    }
+
+                    content.push({ sym, isBomb, isScatter });
+                }
+
+                // Force Scatter trigger for testing if needed (optional dev hack)
+                // if(Math.random() < 0.1 && !isBonus) { ... } 
+
+                // Render
+                content.forEach((item, idx) => {
+                    const el = document.createElement('div');
+                    el.className = 'item';
+
+                    if (item.isBomb) {
+                        el.classList.add('bomb');
+                        const m = multipliers.find(m => m.index === idx);
+                        el.setAttribute('data-val', m.val + 'x');
+                        const label = document.createElement('div');
+                        label.textContent = m.val + 'x';
+                        label.style.cssText = 'position:absolute; color:white; font-weight:bold; z-index:21; text-shadow:0 0 5px black;';
+                        el.appendChild(label);
+                    } else if (item.isScatter) {
+                        el.classList.add('scatter');
+                        el.textContent = 'S';
+                    } else {
+                        el.textContent = item.sym;
+                    }
+
+                    const delay = Math.random() * 0.5;
+                    el.style.animation = `fallDown 0.5s ease-out ${delay}s forwards`;
+                    grid.appendChild(el);
+                });
+
+                // Check Results
+                setTimeout(() => {
+                    const win = checkWin(content, multipliers, bet, isBonus, scatterCount);
+                    if (win && isBonus) {
+                        // Extra visuals for bonus wins?
+                    }
+                    setTimeout(resolve, 1000);
+                }, 1000);
+            });
+        }
+
+        function checkWin(content, multipliers, bet, isBonus, scatterCount) {
+            // Check Scatter Trigger first
+            if (scatterCount >= 4 && !isBonus) {
+                triggerFreeSpins();
+                return false;
+            }
+
+            const counts = {};
+            content.forEach(c => {
+                if (!c.isBomb && !c.isScatter) counts[c.sym] = (counts[c.sym] || 0) + 1;
+            });
+
+            let baseWin = 0;
+            let winningSyms = [];
+
+            for (const [sym, count] of Object.entries(counts)) {
+                if (count >= 8) {
+                    // High Return Payouts
+                    let symbolVal = 500; // Trash tier increased
+                    if (sym === '💎') symbolVal = 10000; // Blue Diamond Huge
+                    else if (sym === '🍒') symbolVal = 5000;
+                    else if (sym === '🍉') symbolVal = 2500;
+
+                    if (isBonus) symbolVal *= 2;
+
+                    // Progressive: (Count - 7) -> 8 items = x1, 10 items = x3, 12 items = x5...
+                    // Exponential scaling for High Risk feel
+                    const scale = Math.pow(1.5, (count - 8));
+                    const win = symbolVal * scale;
+
+                    baseWin += win;
+                    winningSyms.push(sym);
+                }
+            }
+
+            // Pop Animations
+            if (winningSyms.length > 0) {
+                const items = document.querySelectorAll('.item');
+                items.forEach((el) => {
+                    if (winningSyms.includes(el.textContent) && !el.classList.contains('bomb')) {
+                        el.style.animation = 'popScore 0.5s ease';
+                        el.style.boxShadow = '0 0 15px gold';
+                    }
+                });
+            }
+
+            let totalMult = multipliers.reduce((a, b) => a + b.val, 0); // Sum up multiplier values
+            if (totalMult === 0) totalMult = 1;
+
+            if (baseWin > 0) {
+                const finalWin = Math.floor(baseWin * totalMult); // Integer
+                storedBalance += finalWin;
+                saveBalance();
+
+                winDisplay.textContent = `IDR ${finalWin.toLocaleString()}`;
+
+                if (totalMult > 1) {
+                    multDisplay.textContent = `Total Multiplier: x${totalMult}`;
+                    // Animate Bombs
+                    const items = document.querySelectorAll('.item.bomb');
+                    items.forEach(b => b.style.transform = 'scale(1.3) rotate(10deg)');
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function triggerFreeSpins() {
+            isFreeSpinMode = true;
+            freeSpinsLeft = 10;
+
+            fsNotify.classList.add('active');
+            setTimeout(() => {
+                fsNotify.classList.remove('active');
+            }, 3000);
+        }
+
+        function saveBalance() {
+            localStorage.setItem('balance_' + currentUser, storedBalance);
+            balanceDisplay.textContent = storedBalance.toLocaleString();
+            if (document.getElementById('mobileBalance')) document.getElementById('mobileBalance').textContent = storedBalance.toLocaleString();
+        }
+
+        function logout() {
+            window.location.href = 'user.html';
+        }
+
+        function showToast(msg) {
+            if (isFreeSpinMode && msg === "No Win") return; // Reduce spam in bonus
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>
